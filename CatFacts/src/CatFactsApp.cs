@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Microsoft.VisualBasic;
 
 namespace CatFacts.src;
 
@@ -11,7 +9,9 @@ public class CatFactsApp
 {
     private readonly FactFetcherService _factFetcherService;
     private int _currentFactIndex = 0;
+
     private List<CatFact> _facts = new List<CatFact>();
+
     public void StartApp()
     {
         DisplayFact(0);
@@ -59,8 +59,9 @@ public class CatFactsApp
         }
         else if (index < 0)
         {
-            throw new Exception("Blad wyswietlania faktu");
+            throw new Exception("Błąd wyświetlania faktu");
         }
+
         Console.Clear();
 
         var width = Console.WindowWidth;
@@ -68,25 +69,28 @@ public class CatFactsApp
 
 
         Console.WriteLine("Witaj w świecie kocich faktów!");
-        Console.WriteLine("Ciekawostka:");
+        Console.WriteLine("Czy wiedziałeś, że...?");
 
         var words = _facts[index].Fact.Split(' ');
-        var boxSpacesFromWindow = 3;
+        var boxSpacesFromWindow = 6;
         var boxLength = width - boxSpacesFromWindow * 2;
 
         var options =
             (index == 0 ? "" : "← (P)oprzedni | ") +
                         "(N)astępny → | (Q) wyjście";
 
-        if (Array.Exists(words, w => w.Length > boxLength - 2))
+        var minHeight = CalculateMinBoxHeight(boxLength, words) + 1;
+
+        if (minHeight > height - 3 ||  
+            Array.Exists(words, w => w.Length > boxLength - 2))
         {
             //In case the console window is too small, we skip the box printing
             Console.WriteLine(_facts[index].Fact);
             Console.WriteLine(options.PadLeft((width + options.Length) / 2));
             return;
         }
-        var boxHeight = 9; //Assuming facts aren't THAT long
-        PrintBox(boxLength, boxHeight, boxSpacesFromWindow, 20, words);
+
+        PrintBox(boxLength, minHeight, boxSpacesFromWindow, 20, words);
         Console.WriteLine(options.PadLeft((width + options.Length) / 2));
     }
 
@@ -94,6 +98,8 @@ public class CatFactsApp
         int speed, params string[] words)
     {
         var boxCharacter = '#';
+
+        Console.ForegroundColor = ConsoleColor.DarkGray;
 
         Console.WriteLine();
         Console.WriteLine(new string(' ', boxSpacesFromWindow) +
@@ -104,11 +110,12 @@ public class CatFactsApp
 
         for (int i = 0; i < boxHeight - 2; i++)
         {
-            Console.WriteLine(new string(' ', boxSpacesFromWindow) + 
-                          boxCharacter +
-                          new string(' ', boxLength - 2) +
-                          boxCharacter
-                          );
+            Console
+                .WriteLine(new string(' ', boxSpacesFromWindow) + 
+                           boxCharacter +
+                           new string(' ', boxLength - 2) +
+                           boxCharacter
+                );
         }
 
         Console.WriteLine(new string(' ', boxSpacesFromWindow) +
@@ -116,20 +123,40 @@ public class CatFactsApp
 
         Console.CursorLeft = boxStartColumn;
         Console.CursorTop = boxStartRow;
+
+        Console.ResetColor();
+
         foreach (var word in words)
         {
             if (word.Length + Console.CursorLeft >= boxLength + boxSpacesFromWindow)
             {
-                Console.CursorLeft = boxStartRow;
+                Console.CursorLeft = boxStartColumn;
                 Console.CursorTop++;
             }
             Console.Write(word);
-            Console.Write(word.Length + Console.CursorLeft >= boxLength + boxSpacesFromWindow ? "" : " ");
+            Console.Write(Console.CursorLeft + 1 >= boxLength + boxSpacesFromWindow ? "" : " ");
             Thread.Sleep(speed);
         }
         
-        Console.CursorLeft = 0;
+        Console.CursorLeft = 0;                      //
         Console.CursorTop = boxStartRow + boxHeight; //Return cursor back to last line 
+    }
+
+    public int CalculateMinBoxHeight(int boxLength, params string[] words)
+    {
+        var height = 3;
+        var charInLine = 0;
+        foreach (var word in words)
+        {
+            if (word.Length + charInLine >= boxLength-2)
+            {
+                charInLine = 0;
+                height++;
+            }
+            charInLine += word.Length;
+            charInLine += (charInLine + 1 >= boxLength-2 ? 0 : 1);
+        }
+        return height;
     }
 
     public bool ConfirmExit()
@@ -177,11 +204,11 @@ public class CatFactsApp
         var dotCount = 0;
         while (!cancellationToken.IsCancellationRequested)
         {
-            dotCount = (dotCount % 3) + 1;
+            dotCount = (dotCount % 8) + 1;
             var dotString = new string('.', dotCount);
-            Console.Write($"\rŁaduję następną ciekawostkę{dotString}   "); 
+            Console.Write($"\rŁaduję następną ciekawostkę{dotString}        "); 
 
-            await Task.Delay(100);
+            await Task.Delay(50);
         }
     }
 

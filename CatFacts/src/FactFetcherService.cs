@@ -11,7 +11,7 @@ public class FactFetcherService
         try
         {
             var httpResponse = await _client.GetAsync("https://catfact.ninja/fact");
-
+            
             if (!httpResponse.IsSuccessStatusCode)
             {
                 throw new HttpRequestException();
@@ -33,7 +33,7 @@ public class FactFetcherService
     {
         try
         {
-            using var file = new StreamWriter("response.log", true);
+            using var file = new StreamWriter("responses.txt", true);
             await file.WriteLineAsync($"{DateTime.Now}: {response}");
         }
         catch (Exception ex)
